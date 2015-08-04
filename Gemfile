@@ -1,7 +1,7 @@
 source 'https://rubygems.org'
 
 # gem 'pivotal-tracker'
-gem 'tracker_api'
+gem 'tracker_api', github: 'jsilvestri/tracker_api'
 
 # Bundle edge Rails instead: gem 'rails', github: 'rails/rails'
 gem 'rails', '4.1.9'

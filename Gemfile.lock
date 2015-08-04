@@ -1,3 +1,17 @@
+GIT
+  remote: git://github.com/jsilvestri/tracker_api.git
+  revision: 93c681a262e084aeb35aafffdf6fb919a9db61ab
+  specs:
+    tracker_api (0.2.10)
+      addressable
+      equalizer
+      excon
+      faraday (~> 0.9.0)
+      faraday_middleware
+      oj
+      representable
+      virtus
+
 GEM
   remote: https://rubygems.org/
   specs:
@@ -121,15 +135,6 @@ GEM
     thor (0.19.1)
     thread_safe (0.3.5)
     tilt (1.4.1)
-    tracker_api (0.2.10)
-      addressable
-      equalizer
-      excon
-      faraday (~> 0.9.0)
-      faraday_middleware
-      oj
-      representable
-      virtus
     turbolinks (2.5.3)
       coffee-rails
     tzinfo (1.2.2)
@@ -156,6 +161,6 @@ DEPENDENCIES
   sdoc (~> 0.4.0)
   spring
   sqlite3
-  tracker_api
+  tracker_api!
   turbolinks
   uglifier (>= 1.3.0)
