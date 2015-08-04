@@ -60,8 +60,10 @@ namespace :pivotal do
             end
           end
           if test_mode
-            puts "Found #{story.current_state}...#{story.id}, #{story.name}, #{story.owner_ids},
-                  #{labels.map(&:name)}"
+            str = "Found #{story.current_state}...#{story.id}, #{story.name}, #{story.owner_ids},
+                    #{labels.map(&:name)}"
+            puts str
+            Rails.logger.warn str
           end
         end
       end
@@ -97,8 +99,10 @@ namespace :pivotal do
             end
           end
           if test_mode
-            puts "Found #{story.current_state}...#{story.id}, #{story.name}, " +
-                 "#{story.owner_ids}, #{labels.map(&:name)}"
+            str = "Found #{story.current_state}...#{story.id}, #{story.name},
+                    #{story.owner_ids}, #{labels.map(&:name)}"
+            puts str
+            Rails.logger.warn str
           end
         end
       end
