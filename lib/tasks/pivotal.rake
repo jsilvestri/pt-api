@@ -29,8 +29,9 @@ namespace :pivotal do
       project_states_query =
         'current_state:delivered,finished,started,rejected,planned,unstarted,unscheduled'
       project.stories(filter: project_states_query).reverse.each do |story|
+        do_something = false
         if story.story_type == 'release'
-          due_date = _due_date(story.deadline)
+          due_date = _due_date(story)
           project_label = _project_label(project, due_date)
         elsif project_states.include?(story.current_state)
           labels = story.labels
@@ -41,6 +42,7 @@ namespace :pivotal do
             if labels.map(&:name).join(',') =~ /#{DUE_REGEX}/i
               labels.each do |label|
                 if label.name =~ /#{DUE_REGEX}/i
+                  do_something = true
                   # This line deletes the label safely (ie no updating the rest of the story)
                   if test_mode
                     puts '--------soft delete ' + label.name
@@ -52,6 +54,7 @@ namespace :pivotal do
               end
             end
             # This line actually adds the label safely (ie no updating the rest of the story)
+            do_something = true
             if test_mode
               puts '--------soft add ' + due_date
             else
@@ -61,7 +64,7 @@ namespace :pivotal do
           end
           if test_mode
             str = "Found #{story.current_state}...#{story.id}, #{story.name}, #{story.owner_ids},
-                    #{labels.map(&:name)}"
+                    #{labels.map(&:name)}, do something? #{do_something}"
             puts str
             Rails.logger.warn str
           end
@@ -82,12 +85,14 @@ namespace :pivotal do
 
     client.projects.each do |project|
       project.stories(filter: project_states_query).reverse.each do |story|
+        do_something = false
         if story.story_type != 'release' && project_states.include?(story.current_state)
           labels = story.labels
           labels ||= []
           if labels.map(&:name).join(',') =~ /#{DUE_REGEX}/i
             labels.each do |label|
               if label.name =~ /#{DUE_REGEX}/i
+                do_something = true
                 # This line deletes the label safely (ie no updating the rest of the story)
                 if test_mode
                   puts '--------soft delete ' + label.name
@@ -100,7 +105,7 @@ namespace :pivotal do
           end
           if test_mode
             str = "Found #{story.current_state}...#{story.id}, #{story.name},
-                    #{story.owner_ids}, #{labels.map(&:name)}"
+                    #{story.owner_ids}, #{labels.map(&:name)}, do something? #{do_something}"
             puts str
             Rails.logger.warn str
           end
@@ -119,9 +124,21 @@ namespace :pivotal do
     projects
   end
 
-  def _due_date(date)
-    return nil unless date
-    "due #{date.strftime("%a %m/%d").downcase}"
+  def _due_date(story)
+    if story.deadline
+      deadline = story.deadline
+    elsif story.name =~ /\(\s?(EOD)?\s?([0-9]+)\s?\/\s?([0-9]+)\s?(EOD)?\s?\)/
+      # Frances started putting deadlines in parens in the story name
+      # rather than in the deadline field.  e.g. (8/3 EOD)
+      month = $2
+      day = $3
+      year = Date.today.strftime("%Y")
+      deadline = Date.parse("#{day}-#{month}-#{year}")
+    else
+      return nil # No date!
+    end
+
+    "due #{deadline.strftime("%a %m/%d").downcase}"
   end
 
   def _project_label(project, due_date)
