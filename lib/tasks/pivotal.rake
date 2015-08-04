@@ -61,6 +61,23 @@ namespace :pivotal do
               labels_endpoint.add_to_story(project.id, story.id, {name: due_date})
               Rails.logger.warn "Added #{due_date} to #{project.id}/#{story.id}"
             end
+          else
+            # Remove deadline label if there is no longer a deadline
+            labels ||= []
+            # Don't update if we don't already have a due date there!
+            next if labels.map(&:name).join(',') !~ /#{DUE_REGEX}/i
+            labels.each do |label|
+              if label.name =~ /#{DUE_REGEX}/i
+                do_something = true
+                # This line deletes the label safely (ie no updating the rest of the story)
+                if test_mode
+                  puts '--------soft delete (no longer due date) ' + label.name
+                else
+                  labels_endpoint.delete_from_story(project.id, story.id, label.id)
+                  Rails.logger.warn "Removed #{label.name} from #{project.id}/#{story.id}"
+                end
+              end
+            end
           end
           if test_mode
             str = "Found #{story.current_state}...#{story.id}, #{story.name}, #{story.owner_ids},
@@ -125,15 +142,16 @@ namespace :pivotal do
   end
 
   def _due_date(story)
-    if story.deadline
-      deadline = story.deadline
-    elsif story.name =~ /\(\s?(EOD)?\s?([0-9]+)\s?\/\s?([0-9]+)\s?(EOD)?\s?\)/
+    if story.name =~ /\(\s?(EOD)?\s?([0-9]+)\s?\/\s?([0-9]+)\s?(EOD)?\s?\)/
       # Frances started putting deadlines in parens in the story name
       # rather than in the deadline field.  e.g. (8/3 EOD)
       month = $2
       day = $3
       year = Date.today.strftime("%Y")
       deadline = Date.parse("#{day}-#{month}-#{year}")
+    elsif
+      story.deadline
+      deadline = story.deadline
     else
       return nil # No date!
     end
