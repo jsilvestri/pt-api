@@ -148,6 +148,12 @@ namespace :pivotal do
       month = $2
       day = $3
       year = Date.today.strftime("%Y")
+      today_month = Date.today.strftime("%-m")
+      # Assume we are not > 2 months behind a deadline or setting deadlines > 8 months out!
+      # We need this to display the day of week correctly
+      if month.to_i + 3 < today_month.to_i
+        year = year.to_i + 1
+      end
       deadline = Date.parse("#{day}-#{month}-#{year}")
     elsif
       story.deadline
@@ -156,7 +162,7 @@ namespace :pivotal do
       return nil # No date!
     end
 
-    "due #{deadline.strftime("%a %m/%d").downcase}"
+    "due #{deadline.strftime("%a %-m/%-d").downcase}"
   end
 
   def _project_label(project, due_date)
