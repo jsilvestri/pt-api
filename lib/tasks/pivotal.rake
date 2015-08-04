@@ -7,7 +7,8 @@ namespace :pivotal do
   DUE_REGEX = 'due [^0-9]*?\s*[0-9]+\\s*\/\s*[0-9]+'
 
   desc 'Set due dates on all active projects and stories.
-         LIVE=true if running code rather than testing output. ALL=true if first run in a while'
+         LIVE=true if running code rather than testing output.
+         ALL=true if first run in a while, DAY=true for all recent updates in last day'
   task set_due_dates: :environment do
     test_mode = true unless ENV.fetch('LIVE', false)
     token = ENV.fetch('PIVOTAL_TOKEN', nil)
@@ -15,6 +16,8 @@ namespace :pivotal do
     labels_endpoint = TrackerApi::Endpoints::Labels.new(client)
     if ENV['ALL']
       projects = client.projects
+    elsif ENV['DAY']
+      projects = _projects_with_activity(client, Time.now.advance(hours: -26))
     else
       projects = _projects_with_activity(client, Time.now.advance(minutes: -31))
     end
