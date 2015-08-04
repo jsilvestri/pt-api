@@ -6,15 +6,17 @@ require 'active_support/core_ext'
 namespace :pivotal do
   DUE_REGEX = 'due [^0-9]*?\s*[0-9]+\\s*\/\s*[0-9]+'
 
-  desc 'Set due dates on all active projects and stories. ALL=true if first run in a while'
+  desc 'Set due dates on all active projects and stories.
+         LIVE=true if running code rather than testing output. ALL=true if first run in a while'
   task set_due_dates: :environment do
+    test_mode = true unless ENV.fetch('LIVE', false)
     token = ENV.fetch('PIVOTAL_TOKEN', nil)
     client = TrackerApi::Client.new(token: token)
     labels_endpoint = TrackerApi::Endpoints::Labels.new(client)
     if ENV['ALL']
       projects = client.projects
     else
-      _projects_with_activity(client, Time.now.advance(minutes: -31))
+      projects = _projects_with_activity(client, Time.now.advance(minutes: -31))
     end
 
     projects.each do |project|
@@ -36,23 +38,36 @@ namespace :pivotal do
               labels.each do |label|
                 if label.name =~ /#{DUE_REGEX}/i
                   # This line deletes the label safely (ie no updating the rest of the story)
-                  # labels_endpoint.delete_from_story(project.id, story.id, label.id)
+                  if test_mode
+                    puts '--------soft delete ' + label.name
+                  else
+                    labels_endpoint.delete_from_story(project.id, story.id, label.id)
+                    Rails.logger.warn "Deleted #{label.name} from #{project.id}/#{story.id}"
+                  end
                 end
               end
             end
             # This line actually adds the label safely (ie no updating the rest of the story)
-            # labels_endpoint.add_to_story(project.id, story.id, due_date)
+            if test_mode
+              puts '--------soft add ' + due_date
+            else
+              labels_endpoint.add_to_story(project.id, story.id, {name: due_date})
+              Rails.logger.warn "Added #{due_date} to #{project.id}/#{story.id}"
+            end
           end
-          # TODO Update labels by just label issue
-          puts "Found #{story.current_state}...#{story.id}, #{story.name}, #{story.owner_ids}," +
-                 " #{labels.map(&:name)}"
+          if test_mode
+            puts "Found #{story.current_state}...#{story.id}, #{story.name}, #{story.owner_ids},
+                  #{labels.map(&:name)}"
+          end
         end
       end
     end
   end
 
-  desc 'Remove due dates on all active projects and stories'
+  desc 'Remove due dates on all active projects and stories
+        LIVE=true if running code rather than testing output.'
   task remove_due_dates: :environment do
+    test_mode = true unless ENV.fetch('LIVE', false)
     token = ENV.fetch('PIVOTAL_TOKEN', nil)
     client = TrackerApi::Client.new(token: token)
     project_states = %w{finished started rejected planned unstarted unscheduled}
@@ -67,13 +82,19 @@ namespace :pivotal do
             labels.each do |label|
               if label.name =~ /#{DUE_REGEX}/i
                 # This line deletes the label safely (ie no updating the rest of the story)
-                # labels_endpoint.delete_from_story(project.id, story.id, label.id)
+                if test_mode
+                  puts '--------soft delete ' + label.name
+                else
+                  labels_endpoint.delete_from_story(project.id, story.id, label.id)
+                  Rails.logger.warn "Deleted #{label.name} from #{project.id}/#{story.id}"
+                end
               end
             end
           end
-          # TODO Update labels by just story.save
-          puts "Found #{story.current_state}...#{story.id}, #{story.name}, " +
+          if test_mode
+            puts "Found #{story.current_state}...#{story.id}, #{story.name}, " +
                  "#{story.owner_ids}, #{labels.map(&:name)}"
+          end
         end
       end
     end
