@@ -71,7 +71,7 @@ namespace :pivotal do
                 do_something = true
                 # This line deletes the label safely (ie no updating the rest of the story)
                 if test_mode
-                  puts '--------soft delete (no longer due date) ' + label.name
+                  puts '--------soft remove (no longer due date) ' + label.name
                 else
                   labels_endpoint.delete_from_story(project.id, story.id, label.id)
                   Rails.logger.warn "Removed #{label.name} from #{project.id}/#{story.id}"
