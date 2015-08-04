@@ -23,7 +23,8 @@ namespace :pivotal do
       due_date = nil
       project_label = nil
       project_states = %w{finished started rejected planned unstarted unscheduled}
-      project_states_query = 'current_state:finished,started,rejected,planned,unstarted,unscheduled'
+      project_states_query =
+        'current_state:delivered,finished,started,rejected,planned,unstarted,unscheduled'
       project.stories(filter: project_states_query).reverse.each do |story|
         if story.story_type == 'release'
           due_date = _due_date(story.deadline)
@@ -71,7 +72,8 @@ namespace :pivotal do
     token = ENV.fetch('PIVOTAL_TOKEN', nil)
     client = TrackerApi::Client.new(token: token)
     project_states = %w{finished started rejected planned unstarted unscheduled}
-    project_states_query = 'current_state:finished,started,rejected,planned,unstarted,unscheduled'
+    project_states_query =
+      'current_state:delivered,finished,started,rejected,planned,unstarted,unscheduled'
 
     client.projects.each do |project|
       project.stories(filter: project_states_query).reverse.each do |story|
