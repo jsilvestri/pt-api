@@ -18,6 +18,8 @@ namespace :pivotal do
       projects = client.projects
     elsif ENV['DAY']
       projects = _projects_with_activity(client, Time.now.advance(hours: -26))
+    elsif ENV['MINS_AGO']
+      projects = _projects_with_activity(client, Time.now.advance(minutes: ENV['MINS_AGO']))
     else
       projects = _projects_with_activity(client, Time.now.advance(minutes: -31))
     end
